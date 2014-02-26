@@ -108,7 +108,15 @@ public class Paths {
     // Create Group petition
     Group group = new Group(body);
     
-    return Response.ok(group.lastUpdate().toString())
+    String response = group.lastUpdate().toString();
+    
+    if (response.equals("{}"))
+      return Response.noContent()
+					   .header("Server", "api.servIoTicy")
+					   .header("Date", new Date(System.currentTimeMillis()))
+					   .build();
+    
+    return Response.ok(response)
              .header("Server", "api.compose")
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
