@@ -35,39 +35,39 @@ public class Paths {
     SO so = cb.getSO(soId);
     if (so == null)
       throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
-    
+
     return Response.ok(so.responseGetSO())
            .header("Server", "api.compose")
            .header("Date", new Date(System.currentTimeMillis()))
            .build();
   }
 
-	@Path("/{soId}/streams/{streamId}/subscriptions")
-	@GET
-	@Produces("application/json")
-	public Response getSubscriptions(@Context HttpHeaders hh, @PathParam("soId") String soId,
-										@PathParam("streamId") String streamId) {
+  @Path("/{soId}/streams/{streamId}/subscriptions")
+  @GET
+  @Produces("application/json")
+  public Response getSubscriptions(@Context HttpHeaders hh, @PathParam("soId") String soId,
+                    @PathParam("streamId") String streamId) {
 
-		// Get the Service Object
-		CouchBase cb = new CouchBase();
-		SO so = cb.getSO(soId);
-		if (so == null)
-			throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
-  	
+    // Get the Service Object
+    CouchBase cb = new CouchBase();
+    SO so = cb.getSO(soId);
+    if (so == null)
+      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
+
     String response = so.responseSubscriptions(streamId);
-    
+
     // Generate response
     if (response == null)
       return Response.noContent()
-					   .header("Server", "api.servIoTicy")
-					   .header("Date", new Date(System.currentTimeMillis()))
-					   .build();
-		
-		return Response.ok(response)
-					   .header("Server", "api.servIoTicy")
-					   .header("Date", new Date(System.currentTimeMillis()))
-					   .build();
-	}
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+
+    return Response.ok(response)
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+  }
 
   @Path("/{soId}/streams/{streamId}/lastUpdate")
   @GET
@@ -75,28 +75,28 @@ public class Paths {
   public Response getLastUpdate(@Context HttpHeaders hh, @PathParam("soId") String soId,
                     @PathParam("streamId") String streamId) {
 
-  	// Get the Service Object
-  	CouchBase cb = new CouchBase();
-  	SO so = cb.getSO(soId);
-  	if (so == null)
-  		throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
-  	
+    // Get the Service Object
+    CouchBase cb = new CouchBase();
+    SO so = cb.getSO(soId);
+    if (so == null)
+      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
+
     // Get the Service Object Data
     Data data = cb.getData(so, streamId);
-  
+
     if (data == null)
       return Response.noContent()
-					   .header("Server", "api.servIoTicy")
-					   .header("Date", new Date(System.currentTimeMillis()))
-					   .build();
-		
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+
     return Response.ok(data.lastUpdate().toString())
-					   .header("Server", "api.servIoTicy")
+             .header("Server", "api.servIoTicy")
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
   }
 
-	@Path("/groups/lastUpdate")
+  @Path("/groups/lastUpdate")
   @POST
   @Produces("application/json")
   public Response getLastGroupUpdate(@Context HttpHeaders hh, String body) throws JsonProcessingException, IOException {
@@ -104,68 +104,68 @@ public class Paths {
     // Check if exists request data
     if (body.isEmpty())
       throw new ServIoTWebApplicationException(Response.Status.BAD_REQUEST, "No data in the request");
-    
+
     // Create Group petition
     Group group = new Group(body);
-    
+
     String response = group.lastUpdate().toString();
-    
+
     if (response.equals("{}"))
       return Response.noContent()
-					   .header("Server", "api.servIoTicy")
-					   .header("Date", new Date(System.currentTimeMillis()))
-					   .build();
-    
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+
     return Response.ok(response)
              .header("Server", "api.compose")
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
   }
 
-	@Path("/opid/{opId}")
-	@GET
-	@Produces("application/json")
-	public Response getOpId(@Context HttpHeaders hh, @PathParam("opId") String opId,
-										@PathParam("streamId") String streamId) {
+  @Path("/opid/{opId}")
+  @GET
+  @Produces("application/json")
+  public Response getOpId(@Context HttpHeaders hh, @PathParam("opId") String opId,
+                    @PathParam("streamId") String streamId) {
 
-		// Get the Service Object
-		CouchBase cb = new CouchBase();
+    // Get the Service Object
+    CouchBase cb = new CouchBase();
 
-		String res = cb.getOpId(opId);
-		if (res == null)
-			throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The OpId was not found.");
-		
-		return Response.ok(res)
-					   .header("Server", "api.servIoTicy")
-					   .header("Date", new Date(System.currentTimeMillis()))
-					   .build();
-	}
-	
+    String res = cb.getOpId(opId);
+    if (res == null)
+      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The OpId was not found.");
+
+    return Response.ok(res)
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+  }
+
   @Path("/{soId}/streams/{streamId}/{opId}")
   @PUT
   @Produces("application/json")
-  public Response updateInternalSOData(@Context HttpHeaders hh, @PathParam("soId") String soId, 
+  public Response updateInternalSOData(@Context HttpHeaders hh, @PathParam("soId") String soId,
                     @PathParam("streamId") String streamId, @PathParam("opId") String opId, String body) {
 
     // Check if exists request data
     if (body.isEmpty())
       throw new ServIoTWebApplicationException(Response.Status.BAD_REQUEST, "No data in the request");
 
-  	// Get the Service Object
-  	CouchBase cb = new CouchBase();
-  	SO so = cb.getSO(soId);
-  	if (so == null)
-  		throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
-  	
+    // Get the Service Object
+    CouchBase cb = new CouchBase();
+    SO so = cb.getSO(soId);
+    if (so == null)
+      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
+
     // Create Data
     Data data = new Data(so, streamId, body);
 
     // Store in Couchbase
     cb.setData(data);
-    
+
     // Set the opId
     cb.setOpId(opId, Config.getOpIdExpiration());
-    
+
     return Response.ok(body)
              .header("Server", "api.compose")
              .header("Date", new Date(System.currentTimeMillis()))
