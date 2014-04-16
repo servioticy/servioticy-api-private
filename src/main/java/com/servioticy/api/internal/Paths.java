@@ -83,7 +83,7 @@ public class Paths {
       throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
 
     // Get the Service Object Data
-    long lastUpdate = SearchEngine.getLastUpdate(soId,streamId);    
+    long lastUpdate = SearchEngine.getLastUpdateTimeStamp(soId,streamId);
     Data data = cb.getData(soId,streamId,lastUpdate);
 
     if (data == null)
