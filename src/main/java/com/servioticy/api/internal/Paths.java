@@ -18,6 +18,7 @@ import com.servioticy.api.commons.data.CouchBase;
 import com.servioticy.api.commons.data.Group;
 import com.servioticy.api.commons.data.SO;
 import com.servioticy.api.commons.datamodel.Data;
+import com.servioticy.api.commons.elasticsearch.SearchEngine;
 import com.servioticy.api.commons.exceptions.ServIoTWebApplicationException;
 import com.servioticy.api.commons.utils.Config;
 
@@ -82,7 +83,8 @@ public class Paths {
       throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
 
     // Get the Service Object Data
-    Data data = cb.getData(so, streamId);
+    long lastUpdate = SearchEngine.getLastUpdate(soId,streamId);    
+    Data data = cb.getData(soId,streamId,lastUpdate);
 
     if (data == null)
       return Response.noContent()
@@ -90,7 +92,7 @@ public class Paths {
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
 
-    return Response.ok(data.lastUpdate().toString())
+    return Response.ok(data.responseLastUpdate())
              .header("Server", "api.servIoTicy")
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
@@ -108,7 +110,7 @@ public class Paths {
     // Create Group petition
     Group group = new Group(body);
 
-    String response = group.lastUpdate().toString();
+    String response = group.lastUpdate();
 
     if (response.equals("{}"))
       return Response.noContent()
