@@ -32,8 +32,7 @@ public class Paths {
   public Response getSO(@Context HttpHeaders hh, @PathParam("soId") String soId) {
 
     // Get the Service Object
-    CouchBase cb = new CouchBase();
-    SO so = cb.getSO(soId);
+    SO so = CouchBase.getSO(soId);
     if (so == null)
       throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
 
@@ -50,8 +49,7 @@ public class Paths {
                     @PathParam("streamId") String streamId) {
 
     // Get the Service Object
-    CouchBase cb = new CouchBase();
-    SO so = cb.getSO(soId);
+    SO so = CouchBase.getSO(soId);
     if (so == null)
       throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
 
@@ -77,14 +75,13 @@ public class Paths {
                     @PathParam("streamId") String streamId) {
 
     // Get the Service Object
-    CouchBase cb = new CouchBase();
-    SO so = cb.getSO(soId);
+    SO so = CouchBase.getSO(soId);
     if (so == null)
       throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
 
     // Get the Service Object Data
     long lastUpdate = SearchEngine.getLastUpdateTimeStamp(soId,streamId);
-    Data data = cb.getData(soId,streamId,lastUpdate);
+    Data data = CouchBase.getData(soId,streamId,lastUpdate);
 
     if (data == null)
       return Response.noContent()
@@ -131,9 +128,7 @@ public class Paths {
                     @PathParam("streamId") String streamId) {
 
     // Get the Service Object
-    CouchBase cb = new CouchBase();
-
-    String res = cb.getOpId(opId);
+    String res = CouchBase.getOpId(opId);
     if (res == null)
       throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The OpId was not found.");
 
@@ -154,8 +149,7 @@ public class Paths {
       throw new ServIoTWebApplicationException(Response.Status.BAD_REQUEST, "No data in the request");
 
     // Get the Service Object
-    CouchBase cb = new CouchBase();
-    SO so = cb.getSO(soId);
+    SO so = CouchBase.getSO(soId);
     if (so == null)
       throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
 
@@ -163,10 +157,10 @@ public class Paths {
     Data data = new Data(so, streamId, body);
 
     // Store in Couchbase
-    cb.setData(data);
+    CouchBase.setData(data);
 
     // Set the opId
-    cb.setOpId(opId, Config.getOpIdExpiration());
+    CouchBase.setOpId(opId, Config.getOpIdExpiration());
 
     return Response.ok(body)
              .header("Server", "api.compose")
