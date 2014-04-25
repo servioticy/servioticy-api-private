@@ -53,7 +53,7 @@ public class Paths {
     if (so == null)
       throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
 
-    String response = so.responseSubscriptions(streamId);
+    String response = so.responseSubscriptions(streamId, false);
 
     // Generate response
     if (response == null)
