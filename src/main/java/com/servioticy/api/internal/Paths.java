@@ -82,14 +82,17 @@ public class Paths {
     // Get the Service Object Data
     long lastUpdate = SearchEngine.getLastUpdateTimeStamp(soId,streamId);
     Data data = CouchBase.getData(soId,streamId,lastUpdate);
-
-    if (data == null)
+    
+    
+    if (data == null) {
+      System.out.println("Returned data is null");
       return Response.noContent()
              .header("Server", "api.servIoTicy")
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
-
-    return Response.ok(data.responseLastUpdate())
+    }
+    System.out.println("Returned data is: "+data.responseLastUpdate());
+    return Response.ok(data.getString())
              .header("Server", "api.servIoTicy")
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
