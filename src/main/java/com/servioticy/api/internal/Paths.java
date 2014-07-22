@@ -3,6 +3,7 @@ package com.servioticy.api.internal;
 import java.io.IOException;
 import java.util.Date;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -11,6 +12,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,6 +28,18 @@ import com.servioticy.api.commons.utils.Config;
 @Path("/")
 public class Paths {
 
+  @GET
+  @Produces("application/json")
+  public Response getAllSOs(@Context HttpHeaders hh) {
+
+    String sos = CouchBase.getAllSOs();
+
+    return Response.ok(sos)
+  				   .header("Server", "api.servIoTicy")
+  	               .header("Date", new Date(System.currentTimeMillis()))
+  	               .build();
+  }
+	
   @Path("/{soId}")
   @GET
   @Produces("application/json")
