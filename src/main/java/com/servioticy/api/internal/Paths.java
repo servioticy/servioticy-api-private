@@ -3,7 +3,6 @@ package com.servioticy.api.internal;
 import java.io.IOException;
 import java.util.Date;
 
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -12,7 +11,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -50,7 +48,7 @@ public class Paths {
     if (so == null)
       throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
 
-    return Response.ok(so.responseGetSO())
+    return Response.ok(so.responsePrivateGetSO())
            .header("Server", "api.compose")
            .header("Date", new Date(System.currentTimeMillis()))
            .build();
@@ -105,7 +103,7 @@ public class Paths {
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
     }
-    System.out.println("Returned data is: "+data.responseLastUpdate());
+    System.out.println("Returned data is: "+data.responsePrivateLastUpdate());
     return Response.ok(data.getString())
              .header("Server", "api.servIoTicy")
              .header("Date", new Date(System.currentTimeMillis()))
