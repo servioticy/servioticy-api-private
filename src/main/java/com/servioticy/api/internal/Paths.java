@@ -1,6 +1,7 @@
 package com.servioticy.api.internal;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Date;
 
 import javax.ws.rs.GET;
@@ -12,6 +13,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.servioticy.api.commons.data.CouchBase;
@@ -26,6 +29,8 @@ import com.servioticy.api.commons.utils.Config;
 @Path("/")
 public class Paths {
 
+  @Context UriInfo uriInfo;
+
   @GET
   @Produces("application/json")
   public Response getAllSOs(@Context HttpHeaders hh) {
@@ -38,6 +43,33 @@ public class Paths {
   	               .build();
   }
 	
+  @Path("/security/{soId}")
+  @PUT
+  @Produces("application/json")
+  public Response putSecuritySO(@Context HttpHeaders hh, @PathParam("soId") String soId, String body) {
+
+    // Get the Service Object
+    SO so = CouchBase.getSO(soId);
+    if (so == null)
+      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
+
+    // Update the Service Object
+    so.updateSecurity(body);
+
+    // Store in Couchbase
+    CouchBase.setSO(so);
+
+    // Construct the response uri
+    UriBuilder ub = uriInfo.getAbsolutePathBuilder();
+    URI soUri = ub.path(so.getId()).build();
+
+    return Response.ok(soUri)
+             .entity(so.responseUpdateSO())
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+  }
+
   @Path("/{soId}")
   @GET
   @Produces("application/json")
