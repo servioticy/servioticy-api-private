@@ -43,6 +43,22 @@ public class Paths {
   	               .build();
   }
 	
+  @Path("/{soId}")
+  @GET
+  @Produces("application/json")
+  public Response getSO(@Context HttpHeaders hh, @PathParam("soId") String soId) {
+
+    // Get the Service Object
+    SO so = CouchBase.getSO(soId);
+    if (so == null)
+      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
+
+    return Response.ok(so.responseGetSO())
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+  }
+
   @Path("/security/{soId}")
   @PUT
   @Produces("application/json")
@@ -70,10 +86,10 @@ public class Paths {
              .build();
   }
 
-  @Path("/{soId}")
+  @Path("/security/{soId}")
   @GET
   @Produces("application/json")
-  public Response getSO(@Context HttpHeaders hh, @PathParam("soId") String soId) {
+  public Response getSecuritySO(@Context HttpHeaders hh, @PathParam("soId") String soId) {
 
     // Get the Service Object
     SO so = CouchBase.getSO(soId);
