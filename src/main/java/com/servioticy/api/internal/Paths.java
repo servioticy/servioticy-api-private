@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.servioticy.api.commons.data.CouchBase;
 import com.servioticy.api.commons.data.Group;
 import com.servioticy.api.commons.data.SO;
+import com.servioticy.api.commons.data.Subscription;
 import com.servioticy.api.commons.datamodel.Data;
 import com.servioticy.api.commons.elasticsearch.SearchEngine;
 import com.servioticy.api.commons.exceptions.ServIoTWebApplicationException;
@@ -38,11 +39,11 @@ public class Paths {
     String sos = CouchBase.getAllSOs();
 
     return Response.ok(sos)
-  				   .header("Server", "api.servIoTicy")
-  	               .header("Date", new Date(System.currentTimeMillis()))
-  	               .build();
+             .header("Server", "api.servIoTicy")
+                   .header("Date", new Date(System.currentTimeMillis()))
+                   .build();
   }
-	
+
   @Path("/{soId}")
   @GET
   @Produces("application/json")
@@ -57,6 +58,22 @@ public class Paths {
              .header("Server", "api.servIoTicy")
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
+  }
+
+  @Path("/security/{soId}")
+  @GET
+  @Produces("application/json")
+  public Response getSecuritySO(@Context HttpHeaders hh, @PathParam("soId") String soId) {
+
+    // Get the Service Object
+    SO so = CouchBase.getSO(soId);
+    if (so == null)
+      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
+
+    return Response.ok(so.responsePrivateGetSO())
+           .header("Server", "api.compose")
+           .header("Date", new Date(System.currentTimeMillis()))
+           .build();
   }
 
   @Path("/security/{soId}")
@@ -86,20 +103,22 @@ public class Paths {
              .build();
   }
 
-  @Path("/security/{soId}")
+  @Path("/security/subscriptions/{subsId}")
   @GET
   @Produces("application/json")
-  public Response getSecuritySO(@Context HttpHeaders hh, @PathParam("soId") String soId) {
+  public Response getSecuritySubscription(@Context HttpHeaders hh,
+		  			@PathParam("subsId") String subsId, String body) {
 
     // Get the Service Object
-    SO so = CouchBase.getSO(soId);
-    if (so == null)
-      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
+    Subscription subs = CouchBase.getSubscription(subsId);
+    if (subs == null)
+      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Subscription was not found.");
 
-    return Response.ok(so.responsePrivateGetSO())
-           .header("Server", "api.compose")
-           .header("Date", new Date(System.currentTimeMillis()))
-           .build();
+
+    return Response.ok(subs.getString())
+    .header("Server", "api.servIoTicy")
+    .header("Date", new Date(System.currentTimeMillis()))
+    .build();
   }
 
   @Path("/{soId}/streams/{streamId}/subscriptions")
@@ -142,8 +161,8 @@ public class Paths {
     // Get the Service Object Data
     long lastUpdate = SearchEngine.getLastUpdateTimeStamp(soId,streamId);
     Data data = CouchBase.getData(soId,streamId,lastUpdate);
-    
-    
+
+
     if (data == null) {
       System.out.println("Returned data is null");
       return Response.noContent()
