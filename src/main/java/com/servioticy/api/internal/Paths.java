@@ -203,28 +203,11 @@ public class Paths {
              .build();
   }
 
-  @Path("/opid/{opId}")
-  @GET
-  @Produces("application/json")
-  public Response getOpId(@Context HttpHeaders hh, @PathParam("opId") String opId,
-                    @PathParam("streamId") String streamId) {
-
-    // Get the Service Object
-    String res = CouchBase.getOpId(opId);
-    if (res == null)
-      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The OpId was not found.");
-
-    return Response.ok(res)
-             .header("Server", "api.servIoTicy")
-             .header("Date", new Date(System.currentTimeMillis()))
-             .build();
-  }
-
-  @Path("/{soId}/streams/{streamId}/{opId}")
+  @Path("/{soId}/streams/{streamId}")
   @PUT
   @Produces("application/json")
   public Response updateInternalSOData(@Context HttpHeaders hh, @PathParam("soId") String soId,
-                    @PathParam("streamId") String streamId, @PathParam("opId") String opId, String body) {
+                    @PathParam("streamId") String streamId, String body) {
 
     // Check if exists request data
     if (body.isEmpty())
@@ -240,9 +223,6 @@ public class Paths {
 
     // Store in Couchbase
     CouchBase.setData(data);
-
-    // Set the opId
-    CouchBase.setOpId(opId, Config.getOpIdExpiration());
 
     return Response.ok(body)
              .header("Server", "api.compose")
