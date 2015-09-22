@@ -121,6 +121,41 @@ public class Paths {
     .build();
   }
 
+  @Path("/security/info")
+  @POST
+  @Produces("application/json")
+  public Response postSecurityInfo(@Context HttpHeaders hh, String body) {
+
+    // Store in Couchbase
+    String key = CouchBase.setString(body);
+
+    // Construct the response uri
+    UriBuilder ub = uriInfo.getAbsolutePathBuilder();
+    URI infoUri = ub.path(key).build();
+
+    return Response.ok(infoUri)
+             .entity("{ \"key\": \"" + key + "\"}")
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+  }
+
+  @Path("/security/info/{key}")
+  @GET
+  @Produces("application/json")
+  public Response getSecurityInfo(@Context HttpHeaders hh, @PathParam("key") String key) {
+
+    // Get the json
+    String json = CouchBase.getString(key);
+    if (json == null)
+      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The info was not found.");
+
+    return Response.ok(json)
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+  }
+
   @Path("/{soId}/streams/{streamId}/subscriptions")
   @GET
   @Produces("application/json")
