@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Date;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -121,13 +122,14 @@ public class Paths {
     .build();
   }
 
-  @Path("/security/info")
+  @Path("/security/info/{key}")
   @POST
   @Produces("application/json")
-  public Response postSecurityInfo(@Context HttpHeaders hh, String body) {
+  public Response postSecurityInfo(@Context HttpHeaders hh,
+                    @PathParam("key") String key, String body) {
 
     // Store in Couchbase
-    String key = CouchBase.setString(body);
+    CouchBase.setString(key, body);
 
     // Construct the response uri
     UriBuilder ub = uriInfo.getAbsolutePathBuilder();
@@ -151,6 +153,20 @@ public class Paths {
       throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The info was not found.");
 
     return Response.ok(json)
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+  }
+
+  @Path("/security/info/{key}")
+  @DELETE
+  @Produces("application/json")
+  public Response deleteSecurityInfo(@Context HttpHeaders hh, @PathParam("key") String key) {
+
+    // Delete the document
+    CouchBase.deleteString(key);
+
+    return Response.noContent()
              .header("Server", "api.servIoTicy")
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
