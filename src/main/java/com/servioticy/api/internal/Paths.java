@@ -108,7 +108,7 @@ public class Paths {
   @GET
   @Produces("application/json")
   public Response getSecuritySubscription(@Context HttpHeaders hh,
-		  			@PathParam("subsId") String subsId, String body) {
+		  			@PathParam("subsId") String subsId) {
 
     // Get the Service Object
     Subscription subs = CouchBase.getSubscription(subsId);
