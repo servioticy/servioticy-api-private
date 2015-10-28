@@ -3,6 +3,7 @@ package com.servioticy.api.internal;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Date;
+import java.util.List;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -43,6 +44,20 @@ public class Paths {
              .header("Server", "api.servIoTicy")
                    .header("Date", new Date(System.currentTimeMillis()))
                    .build();
+  }
+
+  @Path("/aliveWO")
+  @GET
+  @Produces("application/json")
+  public Response getAllUpdatesLastMinute(@Context HttpHeaders hh) {
+
+    // Get the Service Object Data
+    String response = SearchEngine.getAllUpdatesLastMinute();
+    
+    return Response.ok(response)
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
   }
 
   @Path("/{soId}")
