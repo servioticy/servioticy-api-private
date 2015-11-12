@@ -2,8 +2,9 @@ package com.servioticy.api.internal;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -19,14 +20,23 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.servioticy.api.commons.data.CouchBase;
-import com.servioticy.api.commons.data.Group;
-import com.servioticy.api.commons.data.SO;
-import com.servioticy.api.commons.data.Subscription;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.servioticy.api.commons.data.*;
 import com.servioticy.api.commons.datamodel.Data;
 import com.servioticy.api.commons.elasticsearch.SearchEngine;
 import com.servioticy.api.commons.exceptions.ServIoTWebApplicationException;
-import com.servioticy.api.commons.utils.Config;
+import com.sun.syndication.feed.synd.SyndEntryImpl;
+import com.sun.syndication.feed.synd.SyndFeed;
+import com.sun.syndication.io.FeedException;
+import com.sun.syndication.io.SyndFeedInput;
+import com.sun.syndication.io.XmlReader;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClients;
 
 
 @Path("/")
@@ -294,6 +304,120 @@ public class Paths {
              .header("Server", "api.compose")
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
+  }
+
+
+  private List<String> processQueryResult(HttpResponse response) throws IOException, FeedException {
+    if(response.getEntity() == null){
+      return null;
+    }
+    SyndFeedInput input = new SyndFeedInput();
+    SyndFeed feed = input.build(new XmlReader(response.getEntity().getContent()));
+    if(feed == null){
+      return null;
+    }
+    List<String> soIds = new ArrayList<String>();
+    for(Object entry: feed.getEntries()) {
+      String title = ((SyndEntryImpl)entry).getTitle();
+      soIds.add(title.split("/services/")[1].split("/")[1]);
+    }
+    return soIds;
+  }
+
+  public List<String> performQuery(String query)
+          throws ExecutionException, InterruptedException, IOException, FeedException {
+    CloseableHttpAsyncClient httpClient = HttpAsyncClients.createDefault();
+    httpClient.start();
+    List<Future<HttpResponse>> responses = new ArrayList<Future<HttpResponse>>();
+    List<String> soIds = new ArrayList<String>();
+    HttpRequestBase httpMethod = new HttpGet(query);
+
+    return processQueryResult(httpClient.execute(httpMethod, null).get());
+  }
+  /** Create subscriptions to destination for all the query results
+   *
+   * @param destination
+   */
+  public void updateDynSubscriptions(String accessToken, String destination, String userId, List<String> soIds,
+                                  String streamId, String groupId)
+          throws InterruptedException, ExecutionException, FeedException, IOException {
+    SO so;
+    String body;
+
+    if (groupId == null)
+      throw new ServIoTWebApplicationException(Response.Status.INTERNAL_SERVER_ERROR, "Error retrieving group info");
+
+    // TODO Remove current subscriptions
+
+    for (String soId : soIds) {
+      so = CouchBase.getSO(soId);
+
+      body = "{ " + "\"callback\" : " + "\"internal\", \"destination\":  \"" + destination + "\", \"customFields\": { \"groupId\": \"" + groupId + "\" }" + " }";
+
+      // Create Subscription
+      Subscription subs = new Subscription(accessToken, userId, so, streamId, body);
+
+      // Store in Couchbase
+      CouchBase.setSubscription(subs);
+    }
+  }
+
+  @Path("/{soId}/dynGroups/{groupId}/{userId}/{accessToken}")
+  @PUT
+  @Produces("application/json")
+  public Response updateSODynGroups(@Context HttpHeaders hh, @PathParam("soId") String soId,
+                                    @PathParam("groupId") String groupId, @PathParam("userId") String userId,
+                                    @PathParam("accessToken") String accessToken, String body) {
+    try {
+      ObjectMapper mapper = new ObjectMapper();
+      Map<String, Object> soMap;
+      Map<String, Object> groupsMap;
+      Map<String, Object> dyngroupMap;
+      // Check if exists request data
+      //    if (body.isEmpty())
+      //      throw new ServIoTWebApplicationException(Response.Status.BAD_REQUEST, "No data in the request");
+
+      // Get the Service Object
+      SO so = CouchBase.getSO(soId);
+
+      if (so == null)
+        throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
+
+      soMap = mapper.readValue(so.getString(), new TypeReference<Map<String, JsonNode>>() {});
+      groupsMap = (Map<String,Object>)soMap.get("groups");
+      if (groupsMap == null) {
+        groupsMap = new HashMap<String, Object>();
+      }
+
+      if (!(soMap.containsKey("dyngroups") && ((Map<String, Object>)soMap.get("dyngroups")).containsKey(groupId))) {
+        throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "dyngroup not found");
+      }
+      dyngroupMap = (Map<String, Object>) ((Map<String, Object>)soMap.get("dyngroups")).get(groupId);
+
+      // Fill the groups data
+      Map<String, Object> groupMap = new HashMap<String, Object>();
+      List<String> soIds = performQuery((String) dyngroupMap.get("query"));
+      String streamId = (String) dyngroupMap.get("stream");
+      groupMap.put("soIds", soIds);
+      groupMap.put("stream", streamId);
+      groupsMap.put(groupId, groupMap);
+
+      // Update SO
+      soMap.put("groups", groupsMap);
+      so = new SO(mapper.writeValueAsString(soMap));
+      CouchBase.setSO(so);
+
+      // Create subscriptions
+      updateDynSubscriptions(accessToken, soId, userId, soIds, streamId, groupId);
+
+      return Response.ok(body)
+              .header("Server", "api.compose")
+              .header("Date", new Date(System.currentTimeMillis()))
+              .build();
+    }
+    catch (Exception e) {
+      throw new ServIoTWebApplicationException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+    }
   }
 
 }
