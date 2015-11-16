@@ -339,8 +339,7 @@ public class Paths {
    * @param destination
    */
   public void updateDynSubscriptions(String accessToken, String destination, String userId, List<String> soIds,
-                                  String streamId, String groupId)
-          throws InterruptedException, ExecutionException, FeedException, IOException {
+                                  String streamId, String groupId) {
     SO so;
     String body;
 
@@ -362,11 +361,11 @@ public class Paths {
     }
   }
 
-  @Path("/{soId}/dynGroups/{groupId}/{userId}/{accessToken}")
+  @Path("/{soId}/dyngroups/{groupId}/{accessToken}")
   @PUT
   @Produces("application/json")
   public Response updateSODynGroups(@Context HttpHeaders hh, @PathParam("soId") String soId,
-                                    @PathParam("groupId") String groupId, @PathParam("userId") String userId,
+                                    @PathParam("groupId") String groupId,
                                     @PathParam("accessToken") String accessToken, String body) {
     try {
       ObjectMapper mapper = new ObjectMapper();
@@ -383,7 +382,7 @@ public class Paths {
       if (so == null)
         throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The Service Object was not found.");
 
-      soMap = mapper.readValue(so.getString(), new TypeReference<Map<String, JsonNode>>() {});
+      soMap = mapper.readValue(so.getString(), new TypeReference<Map<String, Object>>() {});
       groupsMap = (Map<String,Object>)soMap.get("groups");
       if (groupsMap == null) {
         groupsMap = new HashMap<String, Object>();
@@ -408,7 +407,7 @@ public class Paths {
       CouchBase.setSO(so);
 
       // Create subscriptions
-      updateDynSubscriptions(accessToken, soId, userId, soIds, streamId, groupId);
+      updateDynSubscriptions(accessToken, soId, so.getUserId(), soIds, streamId, groupId);
 
       return Response.ok(body)
               .header("Server", "api.compose")
