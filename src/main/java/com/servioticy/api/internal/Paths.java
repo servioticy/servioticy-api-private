@@ -338,9 +338,8 @@ public class Paths {
    *
    * @param destination
    */
-  public void updateDynSubscriptions(String accessToken, String destination, String userId, List<String> soIds,
+  public void updateDynSubscriptions(String accessToken, String destination, String userId, List<SO> sos,
                                   String streamId, String groupId) {
-    SO so;
     String body;
 
     if (groupId == null)
@@ -348,8 +347,7 @@ public class Paths {
 
     // TODO Remove current subscriptions
 
-    for (String soId : soIds) {
-      so = CouchBase.getSO(soId);
+    for (SO so : sos) {
 
       body = "{ " + "\"callback\" : " + "\"internal\", \"destination\":  \"" + destination + "\", \"customFields\": { \"groupId\": \"" + groupId + "\" }" + " }";
 
@@ -396,7 +394,20 @@ public class Paths {
       // Fill the groups data
       Map<String, Object> groupMap = new HashMap<String, Object>();
       List<String> soIds = performQuery((String) dyngroupMap.get("query"));
+      List<SO> sos = new ArrayList<SO>();
+      List<String> cleanSoIds = new ArrayList<String>();
+      // Check that the SOs exist
       String streamId = (String) dyngroupMap.get("stream");
+
+      int i = 0;
+      for(String origSoId : soIds){
+        SO origSO = CouchBase.getSO(origSoId);
+        if(origSO!=null && origSO.getStream(streamId)!=null){
+          sos.add(origSO);
+          cleanSoIds.add(origSoId);
+        }
+      }
+      soIds = cleanSoIds;
       groupMap.put("soIds", soIds);
       groupMap.put("stream", streamId);
       groupsMap.put(groupId, groupMap);
@@ -407,7 +418,7 @@ public class Paths {
       CouchBase.setSO(so);
 
       // Create subscriptions
-      updateDynSubscriptions(accessToken, soId, so.getUserId(), soIds, streamId, groupId);
+      updateDynSubscriptions(accessToken, soId, so.getUserId(), sos, streamId, groupId);
 
       return Response.ok(body)
               .header("Server", "api.compose")
