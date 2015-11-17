@@ -256,7 +256,7 @@ public class Paths {
   @Path("/groups/lastUpdate")
   @POST
   @Produces("application/json")
-  public Response getLastGroupUpdate(@Context HttpHeaders hh, String body) throws JsonProcessingException, IOException {
+  public Response getNewLastGroupUpdate(@Context HttpHeaders hh, String body) throws JsonProcessingException, IOException {
 
     // Check if exists request data
     if (body.isEmpty())
@@ -278,6 +278,28 @@ public class Paths {
              .header("Date", new Date(System.currentTimeMillis()))
              .build();
   }
+  /*public Response getLastGroupUpdate(@Context HttpHeaders hh, String body) throws JsonProcessingException, IOException {
+
+    // Check if exists request data
+    if (body.isEmpty())
+      throw new ServIoTWebApplicationException(Response.Status.BAD_REQUEST, "No data in the request");
+
+    // Create Group petition
+    Group group = new Group(body);
+
+    String response = group.lastUpdate();
+
+    if (response.equals("{}"))
+      return Response.noContent()
+             .header("Server", "api.servIoTicy")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+
+    return Response.ok(response)
+             .header("Server", "api.compose")
+             .header("Date", new Date(System.currentTimeMillis()))
+             .build();
+  }*/
 
   @Path("/{soId}/streams/{streamId}")
   @PUT
