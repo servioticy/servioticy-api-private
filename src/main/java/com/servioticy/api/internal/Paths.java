@@ -334,6 +334,32 @@ public class Paths {
 
     return processQueryResult(httpClient.execute(httpMethod, null).get());
   }
+
+  private void removeGroupIdSubscriptions(String destination, String groupId){
+    ObjectMapper mapper = new ObjectMapper();
+    List<String> subscriptionIds = SearchEngine.getAllSubscriptionsByDst(destination);
+    for(String subscriptionId: subscriptionIds){
+      CouchBase.getSubscription(subscriptionId);
+      Subscription subscription = CouchBase.getSubscription(subscriptionId);
+      Map<String, Object> subsMap = mapper.readValue(subscription.getString(),
+              new TypeReference<Map<String, Object>>() {});
+      if(!subsMap.containsKey("customFields")){
+        continue;
+      }
+      Map<String, Object> cfMap = (HashMap<String, Object>)subsMap.get("customFields");
+
+      if(!cfMap.containsKey("groupId") || cfMap.get("groupId").getClass() == String.class){
+        continue;
+      }
+
+      String subGroupId = (String) cfMap.get("groupId");
+
+      if(subGroupId.equals(groupId)){
+        CouchBase.deleteData(subscriptionId);
+      }
+    }
+  }
+
   /** Create subscriptions to destination for all the query results
    *
    * @param destination
@@ -345,7 +371,7 @@ public class Paths {
     if (groupId == null)
       throw new ServIoTWebApplicationException(Response.Status.INTERNAL_SERVER_ERROR, "Error retrieving group info");
 
-    // TODO Remove current subscriptions
+    removeGroupIdSubscriptions(destination, groupId);
 
     for (SO so : sos) {
 
