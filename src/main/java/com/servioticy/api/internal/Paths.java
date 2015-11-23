@@ -335,7 +335,7 @@ public class Paths {
     return processQueryResult(httpClient.execute(httpMethod, null).get());
   }
 
-  private void removeGroupIdSubscriptions(String destination, String groupId){
+  private void removeGroupIdSubscriptions(String destination, String groupId) throws IOException {
     ObjectMapper mapper = new ObjectMapper();
     List<String> subscriptionIds = SearchEngine.getAllSubscriptionsByDst(destination);
     for(String subscriptionId: subscriptionIds){
@@ -365,7 +365,7 @@ public class Paths {
    * @param destination
    */
   public void updateDynSubscriptions(String accessToken, String destination, String userId, List<SO> sos,
-                                  String streamId, String groupId) {
+                                  String streamId, String groupId) throws IOException {
     String body;
 
     if (groupId == null)
