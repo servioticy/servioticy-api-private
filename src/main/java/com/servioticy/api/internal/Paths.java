@@ -63,7 +63,7 @@ public class Paths {
 
     // Get the Service Object Data
     String response = SearchEngine.getAllUpdatesLastMinute();
-    
+
     return Response.ok(response)
              .header("Server", "api.servIoTicy")
              .header("Date", new Date(System.currentTimeMillis()))
@@ -145,56 +145,6 @@ public class Paths {
     .header("Server", "api.servIoTicy")
     .header("Date", new Date(System.currentTimeMillis()))
     .build();
-  }
-
-  @Path("/security/info/{key}")
-  @POST
-  @Produces("application/json")
-  public Response postSecurityInfo(@Context HttpHeaders hh,
-                    @PathParam("key") String key, String body) {
-
-    // Store in Couchbase
-    CouchBase.setString(key, body);
-
-    // Construct the response uri
-    UriBuilder ub = uriInfo.getAbsolutePathBuilder();
-    URI infoUri = ub.path(key).build();
-
-    return Response.ok(infoUri)
-             .entity("{ \"key\": \"" + key + "\"}")
-             .header("Server", "api.servIoTicy")
-             .header("Date", new Date(System.currentTimeMillis()))
-             .build();
-  }
-
-  @Path("/security/info/{key}")
-  @GET
-  @Produces("application/json")
-  public Response getSecurityInfo(@Context HttpHeaders hh, @PathParam("key") String key) {
-
-    // Get the json
-    String json = CouchBase.getString(key);
-    if (json == null)
-      throw new ServIoTWebApplicationException(Response.Status.NOT_FOUND, "The info was not found.");
-
-    return Response.ok(json)
-             .header("Server", "api.servIoTicy")
-             .header("Date", new Date(System.currentTimeMillis()))
-             .build();
-  }
-
-  @Path("/security/info/{key}")
-  @DELETE
-  @Produces("application/json")
-  public Response deleteSecurityInfo(@Context HttpHeaders hh, @PathParam("key") String key) {
-
-    // Delete the document
-    CouchBase.deleteString(key);
-
-    return Response.noContent()
-             .header("Server", "api.servIoTicy")
-             .header("Date", new Date(System.currentTimeMillis()))
-             .build();
   }
 
   @Path("/{soId}/streams/{streamId}/subscriptions")
