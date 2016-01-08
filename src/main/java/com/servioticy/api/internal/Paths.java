@@ -6,6 +6,8 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -34,7 +36,9 @@ import com.sun.syndication.io.SyndFeedInput;
 import com.sun.syndication.io.XmlReader;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 
@@ -43,6 +47,10 @@ import org.apache.http.impl.nio.client.HttpAsyncClients;
 public class Paths {
 
   @Context UriInfo uriInfo;
+  @Context
+  ServletContext servletContext;
+  @Context
+  private transient HttpServletRequest servletRequest;
 
   @GET
   @Produces("application/json")
@@ -324,15 +332,20 @@ public class Paths {
     return soIds;
   }
 
-  public List<String> performQuery(String query)
+  public List<String> performQuery(String query, String callback)
           throws ExecutionException, InterruptedException, IOException, FeedException {
     CloseableHttpAsyncClient httpClient = HttpAsyncClients.createDefault();
     httpClient.start();
-    List<Future<HttpResponse>> responses = new ArrayList<Future<HttpResponse>>();
-    List<String> soIds = new ArrayList<String>();
-    HttpRequestBase httpMethod = new HttpGet(query);
+    HttpPost httpPost;
+    if(callback!=null)
+      httpPost = new HttpPost("http://compose.bsc.es:9082/iserve/discovery/?callback="+callback);
+    else
+      httpPost = new HttpPost("http://compose.bsc.es:9082/iserve/discovery/");
+    StringEntity input = new StringEntity(query);
+    input.setContentType("application/json");
+    httpPost.setEntity(input);
 
-    return processQueryResult(httpClient.execute(httpMethod, null).get());
+    return processQueryResult(httpClient.execute(httpPost, null).get());
   }
 
   private void removeGroupIdSubscriptions(String destination, String groupId) throws IOException {
@@ -385,10 +398,11 @@ public class Paths {
     }
   }
 
-  @Path("/{soId}/dyngroups/{groupId}/{accessToken}")
+  @Path("/{soId}/dyngroups/{groupId}/{first}/{accessToken}")
   @PUT
   @Produces("application/json")
   public Response updateSODynGroups(@Context HttpHeaders hh, @PathParam("soId") String soId,
+                                    @PathParam("first") String first,
                                     @PathParam("groupId") String groupId,
                                     @PathParam("accessToken") String accessToken, String body) {
     try {
@@ -419,7 +433,19 @@ public class Paths {
 
       // Fill the groups data
       Map<String, Object> groupMap = new HashMap<String, Object>();
-      List<String> soIds = performQuery((String) dyngroupMap.get("query"));
+      List<String> soIds;
+      if(!first.equals("0"))
+        soIds = performQuery((String) dyngroupMap.get("query"), null);
+      else {
+        String callback = "http://"+servletRequest.getServerName() +":"+servletRequest.getServerPort() +
+                "/private/" +
+                so.getId() +
+                "/dyngroups/" +
+                groupId +
+                "/0/" +
+                accessToken;
+        soIds = performQuery((String) dyngroupMap.get("query"), callback);
+      }
       List<SO> sos = new ArrayList<SO>();
       List<String> cleanSoIds = new ArrayList<String>();
       // Check that the SOs exist
